@@ -1,4 +1,10 @@
-// In-memory queue storage - no database needed
+import { Redis } from "@upstash/redis"
+
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+})
+
 type Student = {
   id: string
   name: string
@@ -14,83 +20,104 @@ type Booth = {
 }
 
 class QueueStore {
-  private queue: Student[] = []
-  private booths: Map<string, Booth> = new Map([
-    ["1", { id: "1", name: "Booth 1", currentStudent: null, status: "free" }],
-    ["2", { id: "2", name: "Booth 2", currentStudent: null, status: "free" }],
-    ["3", { id: "3", name: "Booth 3", currentStudent: null, status: "free" }],
-  ])
-  private subscribers: Set<() => void> = new Set()
-
-  subscribe(callback: () => void) {
-    this.subscribers.add(callback)
-    return () => this.subscribers.delete(callback)
+  private async initBooths() {
+    const exists = await redis.exists("booths:1")
+    if (!exists) {
+      const booths = [
+        { id: "1", name: "Booth 1", currentStudent: null, status: "free" },
+        { id: "2", name: "Booth 2", currentStudent: null, status: "free" },
+        { id: "3", name: "Booth 3", currentStudent: null, status: "free" },
+      ]
+      for (const booth of booths) {
+        await redis.set(`booths:${booth.id}`, booth)
+      }
+    }
   }
 
-  private notify() {
-    this.subscribers.forEach((callback) => callback())
-  }
+  async addStudent(name: string): Promise<Student> {
+    await this.initBooths()
 
-  addStudent(name: string): Student {
     const student: Student = {
       id: Math.random().toString(36).substring(7),
       name,
       joinedAt: Date.now(),
-      position: this.queue.length + 1,
+      position: 0,
     }
-    this.queue.push(student)
-    this.updatePositions()
-    this.notify()
+
+    await redis.rpush("queue", student)
+    await this.updatePositions()
+
     return student
   }
 
-  private updatePositions() {
-    this.queue.forEach((student, index) => {
-      student.position = index + 1
-    })
+  private async updatePositions() {
+    const queueData = await redis.lrange<Student>("queue", 0, -1)
+    const queue: Student[] = queueData
+
+    for (let i = 0; i < queue.length; i++) {
+      queue[i].position = i + 1
+    }
+
+    await redis.del("queue")
+    for (const student of queue) {
+      await redis.rpush("queue", student)
+    }
   }
 
-  callNextStudent(boothId: string): Student | null {
-    const booth = this.booths.get(boothId)
+  async callNextStudent(boothId: string): Promise<Student | null> {
+    await this.initBooths()
+
+    const booth = await redis.get<Booth>(`booths:${boothId}`)
     if (!booth) return null
 
-    const nextStudent = this.queue.shift()
-    if (nextStudent) {
-      booth.currentStudent = nextStudent
-      booth.status = "busy"
-      this.updatePositions()
-      this.notify()
-      return nextStudent
-    }
-    return null
+    const student = await redis.lpop<Student>("queue")
+    if (!student) return null
+
+    booth.currentStudent = student
+    booth.status = "busy"
+
+    await redis.set(`booths:${boothId}`, booth)
+    await this.updatePositions()
+
+    return student
   }
 
-  finishStudent(boothId: string) {
-    const booth = this.booths.get(boothId)
+  async finishStudent(boothId: string) {
+    await this.initBooths()
+
+    const booth = await redis.get<Booth>(`booths:${boothId}`)
     if (booth) {
       booth.currentStudent = null
       booth.status = "free"
-      this.notify()
+      await redis.set(`booths:${boothId}`, booth)
     }
   }
 
-  getQueue(): Student[] {
-    return [...this.queue]
+  async getQueue(): Promise<Student[]> {
+    return await redis.lrange<Student>("queue", 0, -1)
   }
 
-  getBooths(): Booth[] {
-    return Array.from(this.booths.values())
+  async getBooths(): Promise<Booth[]> {
+    await this.initBooths()
+
+    const booth1 = await redis.get<Booth>("booths:1")
+    const booth2 = await redis.get<Booth>("booths:2")
+    const booth3 = await redis.get<Booth>("booths:3")
+
+    return [booth1!, booth2!, booth3!]
   }
 
-  getStudentPosition(studentId: string): number | null {
-    const student = this.queue.find((s) => s.id === studentId)
+  async getStudentPosition(studentId: string): Promise<number | null> {
+    const queue = await this.getQueue()
+    const student = queue.find((s) => s.id === studentId)
     return student ? student.position : null
   }
 
-  findStudentInBooth(studentId: string): string | null {
-    for (const [boothId, booth] of this.booths) {
+  async findStudentInBooth(studentId: string): Promise<string | null> {
+    const booths = await this.getBooths()
+    for (const booth of booths) {
       if (booth.currentStudent?.id === studentId) {
-        return boothId
+        return booth.id
       }
     }
     return null

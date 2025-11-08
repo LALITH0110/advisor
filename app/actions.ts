@@ -4,7 +4,7 @@ import { queueStore } from "@/lib/queue-store"
 import { revalidatePath } from "next/cache"
 
 export async function joinQueue(name: string) {
-  const student = queueStore.addStudent(name)
+  const student = await queueStore.addStudent(name)
   revalidatePath("/student")
   revalidatePath("/worker")
   revalidatePath("/display")
@@ -12,7 +12,7 @@ export async function joinQueue(name: string) {
 }
 
 export async function callNextStudent(boothId: string) {
-  const student = queueStore.callNextStudent(boothId)
+  const student = await queueStore.callNextStudent(boothId)
   revalidatePath("/student")
   revalidatePath("/worker")
   revalidatePath("/display")
@@ -20,21 +20,27 @@ export async function callNextStudent(boothId: string) {
 }
 
 export async function finishStudent(boothId: string) {
-  queueStore.finishStudent(boothId)
+  await queueStore.finishStudent(boothId)
   revalidatePath("/student")
   revalidatePath("/worker")
   revalidatePath("/display")
 }
 
 export async function getQueueData() {
+  const [queue, booths] = await Promise.all([
+    queueStore.getQueue(),
+    queueStore.getBooths(),
+  ])
   return {
-    queue: queueStore.getQueue(),
-    booths: queueStore.getBooths(),
+    queue,
+    booths,
   }
 }
 
 export async function getStudentStatus(studentId: string) {
-  const position = queueStore.getStudentPosition(studentId)
-  const boothId = queueStore.findStudentInBooth(studentId)
+  const [position, boothId] = await Promise.all([
+    queueStore.getStudentPosition(studentId),
+    queueStore.findStudentInBooth(studentId),
+  ])
   return { position, boothId }
 }
