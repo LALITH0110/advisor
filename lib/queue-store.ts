@@ -41,27 +41,19 @@ class QueueStore {
       id: Math.random().toString(36).substring(7),
       name,
       joinedAt: Date.now(),
-      position: 0,
+      position: 0, // Will be calculated on-the-fly
     }
 
-    await redis.rpush("queue", student)
-    await this.updatePositions()
+    // RPUSH returns the new length, use it to calculate position
+    const queueLength = await redis.rpush("queue", student)
+    student.position = queueLength
 
     return student
   }
 
   private async updatePositions() {
-    const queueData = await redis.lrange<Student>("queue", 0, -1)
-    const queue: Student[] = queueData
-
-    for (let i = 0; i < queue.length; i++) {
-      queue[i].position = i + 1
-    }
-
-    await redis.del("queue")
-    for (const student of queue) {
-      await redis.rpush("queue", student)
-    }
+    // Positions are calculated on-the-fly in getQueue(), no need to rewrite
+    // This method is kept for backward compatibility but does nothing
   }
 
   async callNextStudent(boothId: string): Promise<Student | null> {
@@ -77,7 +69,7 @@ class QueueStore {
     booth.status = "busy"
 
     await redis.set(`booths:${boothId}`, booth)
-    await this.updatePositions()
+    // Positions will be recalculated on next getQueue() call
 
     return student
   }
@@ -94,17 +86,20 @@ class QueueStore {
   }
 
   async getQueue(): Promise<Student[]> {
-    return await redis.lrange<Student>("queue", 0, -1)
+    const queue = await redis.lrange<Student>("queue", 0, -1)
+    // Calculate positions on-the-fly instead of storing them
+    return queue.map((student, index) => ({
+      ...student,
+      position: index + 1,
+    }))
   }
 
   async getBooths(): Promise<Booth[]> {
     await this.initBooths()
 
-    const booth1 = await redis.get<Booth>("booths:1")
-    const booth2 = await redis.get<Booth>("booths:2")
-    const booth3 = await redis.get<Booth>("booths:3")
-
-    return [booth1!, booth2!, booth3!]
+    // Use MGET to fetch all booths in a single command instead of 3 separate GETs
+    const booths = await redis.mget<Booth>("booths:1", "booths:2", "booths:3")
+    return booths.filter((booth): booth is Booth => booth !== null)
   }
 
   async getStudentPosition(studentId: string): Promise<number | null> {

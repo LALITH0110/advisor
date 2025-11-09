@@ -31,7 +31,7 @@ export function DisplayScreen({ initialData }: { initialData: QueueData }) {
     const interval = setInterval(async () => {
       const newData = await getQueueData()
       setData(newData)
-    }, 2000)
+    }, 5000) // Increased from 2000ms to 5000ms to reduce Redis commands
 
     return () => clearInterval(interval)
   }, [])

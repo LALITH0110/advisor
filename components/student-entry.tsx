@@ -36,7 +36,7 @@ export function StudentEntry() {
           console.log("[v0] Notification sound failed:", e)
         }
       }
-    }, 2000)
+    }, 5000) // Increased from 2000ms to 5000ms to reduce Redis commands
 
     return () => clearInterval(interval)
   }, [studentId, boothId])
