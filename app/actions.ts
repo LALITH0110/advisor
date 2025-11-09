@@ -38,9 +38,33 @@ export async function getQueueData() {
 }
 
 export async function getStudentStatus(studentId: string) {
-  const [position, boothId] = await Promise.all([
+  const [position, boothId, booths] = await Promise.all([
     queueStore.getStudentPosition(studentId),
     queueStore.findStudentInBooth(studentId),
+    queueStore.getBooths(),
   ])
-  return { position, boothId }
+
+  const booth = boothId ? booths.find((b) => b.id === boothId) : null
+  const boothName = booth?.name || null
+
+  return { position, boothId, boothName }
+}
+
+export async function updateBoothName(boothId: string, newName: string) {
+  await queueStore.updateBoothName(boothId, newName)
+  revalidatePath("/worker")
+  revalidatePath("/display")
+  revalidatePath("/student")
+  return { success: true }
+}
+
+export async function updateBoothStatus(
+  boothId: string,
+  newStatus: "free" | "busy" | "closed"
+) {
+  await queueStore.updateBoothStatus(boothId, newStatus)
+  revalidatePath("/worker")
+  revalidatePath("/display")
+  revalidatePath("/student")
+  return { success: true }
 }

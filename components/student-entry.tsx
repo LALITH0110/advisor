@@ -16,6 +16,7 @@ export function StudentEntry() {
   const [studentId, setStudentId] = useState<string | null>(null)
   const [position, setPosition] = useState<number | null>(null)
   const [boothId, setBoothId] = useState<string | null>(null)
+  const [boothName, setBoothName] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -25,6 +26,7 @@ export function StudentEntry() {
       const status = await getStudentStatus(studentId)
       setPosition(status.position)
       setBoothId(status.boothId)
+      setBoothName(status.boothName)
 
       // Play notification sound when it's their turn
       if (status.boothId && !boothId) {
@@ -62,7 +64,7 @@ export function StudentEntry() {
         <div className="space-y-2">
           <h2 className="text-3xl font-bold text-iit-red">It's Your Turn!</h2>
           <p className="text-xl text-muted-foreground">
-            Please proceed to <span className="font-bold text-iit-red">Booth {boothId}</span>
+            Please proceed to <span className="font-bold text-iit-red">{boothName || `Booth ${boothId}`}</span>
           </p>
         </div>
         <div className="p-6 bg-iit-red/10 rounded-lg">

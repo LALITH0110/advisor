@@ -16,7 +16,7 @@ type Booth = {
   id: string
   name: string
   currentStudent: Student | null
-  status: "free" | "busy"
+  status: "free" | "busy" | "closed"
 }
 
 type QueueData = {
@@ -53,6 +53,8 @@ export function DisplayScreen({ initialData }: { initialData: QueueData }) {
               className={`p-6 transition-all ${
                 booth.status === "busy"
                   ? "border-2 border-iit-red bg-iit-red/5"
+                  : booth.status === "closed"
+                  ? "border-2 border-gray-400 bg-gray-100"
                   : "border-2 border-green-500 bg-green-50"
               }`}
             >
@@ -62,10 +64,14 @@ export function DisplayScreen({ initialData }: { initialData: QueueData }) {
                   <Badge
                     variant={booth.status === "free" ? "secondary" : "default"}
                     className={`text-lg px-4 py-2 ${
-                      booth.status === "free" ? "bg-green-600 text-white" : "bg-iit-red text-white"
+                      booth.status === "free"
+                        ? "bg-green-600 text-white"
+                        : booth.status === "closed"
+                        ? "bg-gray-500 text-white"
+                        : "bg-iit-red text-white"
                     }`}
                   >
-                    {booth.status === "free" ? "Available" : "Busy"}
+                    {booth.status === "free" ? "Available" : booth.status === "closed" ? "Closed" : "Busy"}
                   </Badge>
                 </div>
 
@@ -81,7 +87,9 @@ export function DisplayScreen({ initialData }: { initialData: QueueData }) {
                   </div>
                 ) : (
                   <div className="bg-white p-8 rounded-lg text-center">
-                    <p className="text-xl text-muted-foreground">Waiting...</p>
+                    <p className="text-xl text-muted-foreground">
+                      {booth.status === "closed" ? "Booth Closed" : "Waiting..."}
+                    </p>
                   </div>
                 )}
               </div>

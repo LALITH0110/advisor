@@ -1,4 +1,5 @@
 import { Redis } from "@upstash/redis"
+import { BOOTH_CONFIG } from "./booth-config"
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -16,18 +17,19 @@ type Booth = {
   id: string
   name: string
   currentStudent: Student | null
-  status: "free" | "busy"
+  status: "free" | "busy" | "closed"
 }
 
 class QueueStore {
   private async initBooths() {
     const exists = await redis.exists("booths:1")
     if (!exists) {
-      const booths = [
-        { id: "1", name: "Booth 1", currentStudent: null, status: "free" },
-        { id: "2", name: "Booth 2", currentStudent: null, status: "free" },
-        { id: "3", name: "Booth 3", currentStudent: null, status: "free" },
-      ]
+      const booths = BOOTH_CONFIG.map((config) => ({
+        id: config.id,
+        name: config.name,
+        currentStudent: null,
+        status: "free" as const,
+      }))
       for (const booth of booths) {
         await redis.set(`booths:${booth.id}`, booth)
       }
@@ -116,6 +118,40 @@ class QueueStore {
       }
     }
     return null
+  }
+
+  // Update booth names from config (preserves current students)
+  async updateBoothNames() {
+    const booths = await this.getBooths()
+    for (const booth of booths) {
+      const config = BOOTH_CONFIG.find((c) => c.id === booth.id)
+      if (config && booth.name !== config.name) {
+        booth.name = config.name
+        await redis.set(`booths:${booth.id}`, booth)
+      }
+    }
+  }
+
+  // Update a single booth name (from UI)
+  async updateBoothName(boothId: string, newName: string) {
+    const booth = await redis.get<Booth>(`booths:${boothId}`)
+    if (booth) {
+      booth.name = newName.trim() || `Booth ${boothId}`
+      await redis.set(`booths:${boothId}`, booth)
+    }
+  }
+
+  // Update booth status (from UI)
+  async updateBoothStatus(boothId: string, newStatus: "free" | "busy" | "closed") {
+    const booth = await redis.get<Booth>(`booths:${boothId}`)
+    if (booth) {
+      booth.status = newStatus
+      // If closing booth, clear current student
+      if (newStatus === "closed" && booth.currentStudent) {
+        booth.currentStudent = null
+      }
+      await redis.set(`booths:${boothId}`, booth)
+    }
   }
 }
 
