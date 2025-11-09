@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { joinQueue, getStudentStatus } from "@/app/actions"
 import { Users, CheckCircle, Loader2 } from "lucide-react"
+import { Quiz } from "@/components/quiz"
 
 export function StudentEntry() {
   const [name, setName] = useState("")
@@ -74,27 +75,30 @@ export function StudentEntry() {
 
   if (studentId && position !== null) {
     return (
-      <Card className="w-full max-w-md p-8 text-center space-y-6">
-        <div className="w-20 h-20 bg-iit-red/10 rounded-full flex items-center justify-center mx-auto">
-          <Users className="w-12 h-12 text-iit-red" />
-        </div>
-        <div className="space-y-2">
-          <h2 className="text-3xl font-bold">You're in Line!</h2>
-          <p className="text-muted-foreground">Please wait for your turn</p>
-        </div>
-        <div className="p-8 bg-iit-red/5 rounded-lg space-y-2">
-          <p className="text-sm text-muted-foreground">Your Position</p>
-          <p className="text-6xl font-bold text-iit-red">{position}</p>
-          <p className="text-sm text-muted-foreground">
-            {position === 1 ? "You're next!" : `${position - 1} student${position > 2 ? "s" : ""} ahead`}
-          </p>
-        </div>
-        <div className="p-4 bg-muted rounded-lg">
-          <p className="text-sm text-muted-foreground">Student Name</p>
-          <p className="text-xl font-semibold">{name}</p>
-        </div>
-        <p className="text-sm text-muted-foreground">Keep this page open to receive updates</p>
-      </Card>
+      <div className="w-full max-w-md space-y-0">
+        <Card className="w-full p-8 text-center space-y-6">
+          <div className="w-20 h-20 bg-iit-red/10 rounded-full flex items-center justify-center mx-auto">
+            <Users className="w-12 h-12 text-iit-red" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-3xl font-bold">You're in Line!</h2>
+            <p className="text-muted-foreground">Please wait for your turn</p>
+          </div>
+          <div className="p-8 bg-iit-red/5 rounded-lg space-y-2">
+            <p className="text-sm text-muted-foreground">Your Position</p>
+            <p className="text-6xl font-bold text-iit-red">{position}</p>
+            <p className="text-sm text-muted-foreground">
+              {position === 1 ? "You're next!" : `${position - 1} student${position > 2 ? "s" : ""} ahead`}
+            </p>
+          </div>
+          <div className="p-4 bg-muted rounded-lg">
+            <p className="text-sm text-muted-foreground">Student Name</p>
+            <p className="text-xl font-semibold">{name}</p>
+          </div>
+          <p className="text-sm text-muted-foreground">Keep this page open to receive updates</p>
+        </Card>
+        <Quiz />
+      </div>
     )
   }
 
