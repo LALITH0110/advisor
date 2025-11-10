@@ -112,7 +112,7 @@ export function StudentEntry() {
         </div>
         <div>
           <h1 className="text-3xl font-bold text-iit-red">Join Queue</h1>
-          <p className="text-muted-foreground mt-2">IIT Advising Department</p>
+          <p className="text-muted-foreground mt-2">Illinois Tech Transfer OneStop</p>
         </div>
       </div>
 

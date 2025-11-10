@@ -41,8 +41,8 @@ export function DisplayScreen({ initialData }: { initialData: QueueData }) {
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="text-center space-y-2">
-          <h1 className="text-5xl font-bold text-iit-red">IIT Advising Queue</h1>
-          <p className="text-2xl text-muted-foreground">Department Queue Status</p>
+          <h1 className="text-5xl font-bold text-iit-red">Welcome to Illinois Tech!</h1>
+          <p className="text-2xl text-muted-foreground">Please take a seat and wait for your turn.</p>
         </div>
 
         {/* Booths Status */}

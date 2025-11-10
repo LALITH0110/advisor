@@ -7,9 +7,9 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'Illinois tech Counsellor Queue System',
-  description: 'Illinois tech Counsellor Queue System',
-  generator: 'Illinois tech Counsellor Queue System',
+  title: 'Illinois Tech Counselor Queue System',
+  description: 'Illinois Tech Counselor Queue System',
+  generator: 'Illinois Tech Counselor Queue System',
   icons: {
     icon: [
       {
