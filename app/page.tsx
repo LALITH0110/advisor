@@ -13,14 +13,14 @@ export default function HomePage() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
-          <Link href="/worker" className="block">
+          <Link href="/counselor" className="block">
             <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer border-2 hover:border-iit-red">
               <div className="space-y-4">
                 <div className="w-12 h-12 bg-iit-red/10 rounded-full flex items-center justify-center">
                   <UserCircle className="w-6 h-6 text-iit-red" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-semibold">Worker Panel</h2>
+                  <h2 className="text-2xl font-semibold">Counselor Panel</h2>
                   <p className="text-muted-foreground mt-2">Manage booths and call next students</p>
                 </div>
                 <Button className="w-full">Access Panel</Button>

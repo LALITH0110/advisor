@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache"
 export async function joinQueue(name: string) {
   const student = await queueStore.addStudent(name)
   revalidatePath("/student")
-  revalidatePath("/worker")
+  revalidatePath("/counselor")
   revalidatePath("/display")
   return student
 }
@@ -14,7 +14,7 @@ export async function joinQueue(name: string) {
 export async function callNextStudent(boothId: string) {
   const student = await queueStore.callNextStudent(boothId)
   revalidatePath("/student")
-  revalidatePath("/worker")
+  revalidatePath("/counselor")
   revalidatePath("/display")
   return student
 }
@@ -22,7 +22,7 @@ export async function callNextStudent(boothId: string) {
 export async function finishStudent(boothId: string) {
   await queueStore.finishStudent(boothId)
   revalidatePath("/student")
-  revalidatePath("/worker")
+  revalidatePath("/counselor")
   revalidatePath("/display")
 }
 
@@ -52,7 +52,7 @@ export async function getStudentStatus(studentId: string) {
 
 export async function updateBoothName(boothId: string, newName: string) {
   await queueStore.updateBoothName(boothId, newName)
-  revalidatePath("/worker")
+  revalidatePath("/counselor")
   revalidatePath("/display")
   revalidatePath("/student")
   return { success: true }
@@ -63,7 +63,7 @@ export async function updateBoothStatus(
   newStatus: "free" | "busy" | "closed"
 ) {
   await queueStore.updateBoothStatus(boothId, newStatus)
-  revalidatePath("/worker")
+  revalidatePath("/counselor")
   revalidatePath("/display")
   revalidatePath("/student")
   return { success: true }
