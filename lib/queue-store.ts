@@ -76,6 +76,36 @@ class QueueStore {
     return student
   }
 
+  async callSpecificStudent(boothId: string, studentId: string): Promise<Student | null> {
+    await this.initBooths()
+
+    const booth = await redis.get<Booth>(`booths:${boothId}`)
+    if (!booth) return null
+
+    // Get all students in queue
+    const queue = await redis.lrange<Student>("queue", 0, -1)
+
+    // Find the specific student
+    const studentIndex = queue.findIndex(s => s.id === studentId)
+    if (studentIndex === -1) return null
+
+    const student = queue[studentIndex]
+
+    // Remove student from queue at specific index
+    // Redis doesn't have a direct remove by index, so we:
+    // 1. Mark the student with a unique placeholder
+    // 2. Remove the placeholder
+    await redis.lset("queue", studentIndex, { ...student, id: "__REMOVE__" })
+    await redis.lrem("queue", 1, { ...student, id: "__REMOVE__" })
+
+    // Assign to booth
+    booth.currentStudent = student
+    booth.status = "busy"
+    await redis.set(`booths:${boothId}`, booth)
+
+    return student
+  }
+
   async finishStudent(boothId: string) {
     await this.initBooths()
 
@@ -85,6 +115,25 @@ class QueueStore {
       booth.status = "free"
       await redis.set(`booths:${boothId}`, booth)
     }
+  }
+
+  async returnStudentToFront(boothId: string): Promise<Student | null> {
+    await this.initBooths()
+
+    const booth = await redis.get<Booth>(`booths:${boothId}`)
+    if (!booth || !booth.currentStudent) return null
+
+    const student = booth.currentStudent
+
+    // Add student to front of queue
+    await redis.lpush("queue", student)
+
+    // Free the booth
+    booth.currentStudent = null
+    booth.status = "free"
+    await redis.set(`booths:${boothId}`, booth)
+
+    return student
   }
 
   async getQueue(): Promise<Student[]> {

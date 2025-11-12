@@ -19,11 +19,27 @@ export async function callNextStudent(boothId: string) {
   return student
 }
 
+export async function callSpecificStudent(boothId: string, studentId: string) {
+  const student = await queueStore.callSpecificStudent(boothId, studentId)
+  revalidatePath("/student")
+  revalidatePath("/counselor")
+  revalidatePath("/display")
+  return student
+}
+
 export async function finishStudent(boothId: string) {
   await queueStore.finishStudent(boothId)
   revalidatePath("/student")
   revalidatePath("/counselor")
   revalidatePath("/display")
+}
+
+export async function returnStudentToFront(boothId: string) {
+  const student = await queueStore.returnStudentToFront(boothId)
+  revalidatePath("/student")
+  revalidatePath("/counselor")
+  revalidatePath("/display")
+  return student
 }
 
 export async function getQueueData() {

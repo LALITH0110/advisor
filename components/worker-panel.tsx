@@ -11,8 +11,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { callNextStudent, finishStudent, getQueueData, updateBoothName, updateBoothStatus } from "@/app/actions"
-import { UserCircle, Check, Edit2, Save, X, ChevronDown } from "lucide-react"
+import { callNextStudent, callSpecificStudent, finishStudent, returnStudentToFront, getQueueData, updateBoothName, updateBoothStatus } from "@/app/actions"
+import { UserCircle, Check, Edit2, Save, X, ChevronDown, UserPlus, RotateCcw } from "lucide-react"
 
 type Student = {
   id: string
@@ -56,9 +56,25 @@ export function WorkerPanel({ initialData }: { initialData: QueueData }) {
     setLoading(null)
   }
 
+  async function handleCallSpecific(boothId: string, studentId: string) {
+    setLoading(boothId)
+    await callSpecificStudent(boothId, studentId)
+    const newData = await getQueueData()
+    setData(newData)
+    setLoading(null)
+  }
+
   async function handleFinish(boothId: string) {
     setLoading(boothId)
     await finishStudent(boothId)
+    const newData = await getQueueData()
+    setData(newData)
+    setLoading(null)
+  }
+
+  async function handleReturnToFront(boothId: string) {
+    setLoading(boothId)
+    await returnStudentToFront(boothId)
     const newData = await getQueueData()
     setData(newData)
     setLoading(null)
@@ -198,14 +214,25 @@ export function WorkerPanel({ initialData }: { initialData: QueueData }) {
                     </div>
                   </div>
                 </div>
-                <Button
-                  onClick={() => handleFinish(booth.id)}
-                  disabled={loading === booth.id}
-                  className="w-full bg-green-600 hover:bg-green-700"
-                >
-                  <Check className="w-4 h-4 mr-2" />
-                  {loading === booth.id ? "Processing..." : "Finish & Free Booth"}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => handleFinish(booth.id)}
+                    disabled={loading === booth.id}
+                    className="flex-1 bg-green-600 hover:bg-green-700"
+                  >
+                    <Check className="w-4 h-4 mr-2" />
+                    {loading === booth.id ? "Processing..." : "Finish & Free Booth"}
+                  </Button>
+                  <Button
+                    onClick={() => handleReturnToFront(booth.id)}
+                    disabled={loading === booth.id}
+                    variant="outline"
+                    className="px-3 border-orange-500 text-orange-700 hover:bg-orange-50"
+                    title="Return to front of queue"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             ) : (
               <div className="space-y-4">
@@ -214,13 +241,42 @@ export function WorkerPanel({ initialData }: { initialData: QueueData }) {
                     {booth.status === "closed" ? "Booth Closed" : "No student"}
                   </p>
                 </div>
-                <Button
-                  onClick={() => handleCallNext(booth.id)}
-                  disabled={data.queue.length === 0 || loading === booth.id || booth.status === "closed"}
-                  className="w-full"
-                >
-                  {loading === booth.id ? "Calling..." : booth.status === "closed" ? "Booth Closed" : "Call Next Student"}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => handleCallNext(booth.id)}
+                    disabled={data.queue.length === 0 || loading === booth.id || booth.status === "closed"}
+                    className="flex-1"
+                  >
+                    {loading === booth.id ? "Calling..." : booth.status === "closed" ? "Booth Closed" : "Call Next"}
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        disabled={data.queue.length === 0 || loading === booth.id || booth.status === "closed"}
+                        variant="outline"
+                        className="px-3"
+                      >
+                        <UserPlus className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <div className="px-2 py-1.5 text-sm font-semibold">Select Student</div>
+                      {data.queue.map((student) => (
+                        <DropdownMenuItem
+                          key={student.id}
+                          onClick={() => handleCallSpecific(booth.id, student.id)}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 bg-iit-red text-white rounded-full flex items-center justify-center text-xs font-semibold">
+                              {student.position}
+                            </div>
+                            <span>{student.name}</span>
+                          </div>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
             )}
           </Card>
