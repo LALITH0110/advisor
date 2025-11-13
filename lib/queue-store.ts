@@ -33,7 +33,14 @@ class QueueStore {
       for (const booth of booths) {
         await redis.set(`booths:${booth.id}`, booth)
       }
+      // Store booth IDs list
+      await redis.set("booth_ids", ["1", "2", "3"])
     }
+  }
+
+  private async getBoothIds(): Promise<string[]> {
+    const ids = await redis.get<string[]>("booth_ids")
+    return ids || ["1", "2", "3"]
   }
 
   async addStudent(name: string): Promise<Student> {
@@ -148,8 +155,13 @@ class QueueStore {
   async getBooths(): Promise<Booth[]> {
     await this.initBooths()
 
-    // Use MGET to fetch all booths in a single command instead of 3 separate GETs
-    const booths = await redis.mget<Booth>("booths:1", "booths:2", "booths:3")
+    const boothIds = await this.getBoothIds()
+    const boothKeys = boothIds.map(id => `booths:${id}`)
+
+    // Fetch all booths dynamically
+    if (boothKeys.length === 0) return []
+
+    const booths = await redis.mget<Booth>(...boothKeys)
     return booths.filter((booth): booth is Booth => booth !== null)
   }
 
@@ -201,6 +213,47 @@ class QueueStore {
       }
       await redis.set(`booths:${boothId}`, booth)
     }
+  }
+
+  // Add a new booth
+  async addBooth(): Promise<Booth> {
+    await this.initBooths()
+
+    const boothIds = await this.getBoothIds()
+    const nextId = (Math.max(...boothIds.map(id => parseInt(id))) + 1).toString()
+
+    const newBooth: Booth = {
+      id: nextId,
+      name: `Booth ${nextId}`,
+      currentStudent: null,
+      status: "free"
+    }
+
+    await redis.set(`booths:${nextId}`, newBooth)
+
+    // Update booth IDs list
+    const updatedIds = [...boothIds, nextId]
+    await redis.set("booth_ids", updatedIds)
+
+    return newBooth
+  }
+
+  // Remove a booth
+  async removeBooth(boothId: string): Promise<boolean> {
+    const booth = await redis.get<Booth>(`booths:${boothId}`)
+    if (!booth) return false
+
+    // Don't allow removing if booth has a student
+    if (booth.currentStudent) return false
+
+    await redis.del(`booths:${boothId}`)
+
+    // Update booth IDs list
+    const boothIds = await this.getBoothIds()
+    const updatedIds = boothIds.filter(id => id !== boothId)
+    await redis.set("booth_ids", updatedIds)
+
+    return true
   }
 }
 

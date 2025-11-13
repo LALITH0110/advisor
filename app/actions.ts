@@ -84,3 +84,19 @@ export async function updateBoothStatus(
   revalidatePath("/student")
   return { success: true }
 }
+
+export async function addBooth() {
+  const booth = await queueStore.addBooth()
+  revalidatePath("/counselor")
+  revalidatePath("/display")
+  revalidatePath("/student")
+  return booth
+}
+
+export async function removeBooth(boothId: string) {
+  const success = await queueStore.removeBooth(boothId)
+  revalidatePath("/counselor")
+  revalidatePath("/display")
+  revalidatePath("/student")
+  return { success }
+}

@@ -23,13 +23,7 @@ export default async function WorkerPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-iit-red">Counselor Panel</h1>
-            <p className="text-muted-foreground mt-1">Manage booths and serve students</p>
-          </div>
-        </div>
+      <div className="max-w-7xl mx-auto">
         <WorkerPanel initialData={data} />
       </div>
     </div>

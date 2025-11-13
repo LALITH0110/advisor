@@ -11,8 +11,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { callNextStudent, callSpecificStudent, finishStudent, returnStudentToFront, getQueueData, updateBoothName, updateBoothStatus } from "@/app/actions"
-import { UserCircle, Check, Edit2, Save, X, ChevronDown, UserPlus, RotateCcw } from "lucide-react"
+import { callNextStudent, callSpecificStudent, finishStudent, returnStudentToFront, getQueueData, updateBoothName, updateBoothStatus, addBooth, removeBooth } from "@/app/actions"
+import { UserCircle, Check, Edit2, Save, X, ChevronDown, UserPlus, RotateCcw, Plus, Trash2 } from "lucide-react"
 
 type Student = {
   id: string
@@ -116,14 +116,56 @@ export function WorkerPanel({ initialData }: { initialData: QueueData }) {
     }
   }
 
+  async function handleAddBooth() {
+    setLoading("adding")
+    try {
+      await addBooth()
+      const newData = await getQueueData()
+      setData(newData)
+    } finally {
+      setLoading(null)
+    }
+  }
+
+  async function handleRemoveBooth(boothId: string) {
+    setLoading(boothId)
+    try {
+      const result = await removeBooth(boothId)
+      if (result.success) {
+        const newData = await getQueueData()
+        setData(newData)
+      }
+    } finally {
+      setLoading(null)
+    }
+  }
+
   return (
     <div className="space-y-6">
+      {/* Header with Add Booth button */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl md:text-4xl font-bold text-iit-red">Counselor Panel</h1>
+          <p className="text-muted-foreground mt-1">Manage booths and serve students</p>
+        </div>
+        <Button
+          onClick={handleAddBooth}
+          disabled={loading === "adding"}
+          variant="outline"
+          size="icon"
+          className="border-iit-red text-iit-red hover:bg-iit-red/10 mt-6"
+          title="Add booth"
+        >
+          <Plus className="w-5 h-5" />
+        </Button>
+      </div>
+
       <div className="grid md:grid-cols-3 gap-6">
         {data.booths.map((booth) => (
           <Card key={booth.id} className="p-6 space-y-4">
             <div className="space-y-4">
-              {/* Booth Name Header */}
-              <div className="flex items-center justify-between gap-2">
+              {/* Booth Name Header with Delete Button */}
+              <div className="flex items-start gap-2">
                 {editingBooth === booth.id ? (
                   <div className="flex-1 space-y-2">
                     <Input
@@ -155,13 +197,25 @@ export function WorkerPanel({ initialData }: { initialData: QueueData }) {
                     </div>
                   </div>
                 ) : (
-                  <h2
-                    className="text-2xl font-semibold flex-1 cursor-pointer hover:text-iit-red transition-colors px-2 py-1 rounded hover:bg-gray-50"
-                    onDoubleClick={() => startEditing(booth.id, booth.name)}
-                    title="Double-click to edit"
-                  >
-                    {booth.name}
-                  </h2>
+                  <>
+                    <h2
+                      className="text-2xl font-semibold flex-1 cursor-pointer hover:text-iit-red transition-colors px-2 py-1 rounded hover:bg-gray-50"
+                      onDoubleClick={() => startEditing(booth.id, booth.name)}
+                      title="Double-click to edit"
+                    >
+                      {booth.name}
+                    </h2>
+                    {data.booths.length > 1 && !booth.currentStudent && (
+                      <button
+                        onClick={() => handleRemoveBooth(booth.id)}
+                        disabled={loading === booth.id}
+                        className="text-red-500 hover:bg-red-50 p-1 rounded transition-colors self-start"
+                        title="Remove booth"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </>
                 )}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
